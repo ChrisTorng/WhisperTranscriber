@@ -1141,8 +1141,26 @@ class WhisperModel:
                 self.logger.debug(
                     "Processing segment at %s", format_timestamp(time_offset)
                 )
-
-            previous_tokens = all_tokens[prompt_reset_since:]
+            # 建立包含 initial_prompt 的 previous_tokens
+            if options.initial_prompt is not None and options.condition_on_previous_text:
+                # 保存原始的 prompt_reset_since 位置
+                original_prompt_reset_since = prompt_reset_since
+                
+                # 取得前一段落的轉錄文字 (不包含 initial_prompt)
+                previous_segment_tokens = all_tokens[prompt_reset_since:]
+                
+                # 重新設置 previous_tokens，加入 initial_prompt
+                if isinstance(options.initial_prompt, str):
+                    initial_prompt = " " + options.initial_prompt.strip()
+                    initial_prompt_tokens = tokenizer.encode(initial_prompt)
+                    # 先加入 initial_prompt，再加入前一段落的文字
+                    previous_tokens = initial_prompt_tokens + previous_segment_tokens
+                else:
+                    # 如果 initial_prompt 是 token，直接加入
+                    previous_tokens = list(options.initial_prompt) + previous_segment_tokens
+            else:
+                # 原始行為：只使用前一段落的文字
+                previous_tokens = all_tokens[prompt_reset_since:]
 
             if seek > 0 or encoder_output is None:
                 encoder_output = self.encode(segment)

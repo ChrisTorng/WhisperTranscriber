@@ -1,0 +1,2 @@
+1. Ask: 針對太長的音檔，它會切斷音檔再給 whisper 進行 STT 解讀。請問 initial_prompt 是否有用在每一段落，還是只有第一段有用? 後續段落是否僅有套用前一段落轉錄的文字? 我希望 initial_prompt 可以反覆套用在每一段上，也就是每一段都要有 initial_prompt 加前一段轉錄文字作為提示。
+2. Agent: faster_whisper 資料夾是已經引入 repo 的原始碼的一部份，請為我直接修改。
