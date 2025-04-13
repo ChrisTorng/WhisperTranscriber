@@ -1,6 +1,13 @@
 import os
 import sys
+import logging
 from faster_whisper import WhisperModel
+from faster_whisper.utils import get_logger
+
+# 設定日誌等級為 DEBUG 以顯示所有日誌訊息
+logging.basicConfig(level=logging.DEBUG)
+logger = get_logger()
+logger.setLevel(logging.DEBUG)
 
 # model_size = "large-v3"
 # model_size = "tiny"
@@ -47,7 +54,11 @@ model = WhisperModel(model_size, device="cuda", compute_type="float16")
 print(f"處理音檔: {audio_file}")
 print(f"轉錄結果將儲存至: {output_file} 及 {txt_output_file}")
 
-segments, info = model.transcribe(audio_file, beam_size=5, language="zh", initial_prompt="台灣繁體中文")
+segments, info = model.transcribe(audio_file,
+                                  beam_size=5,
+                                  language="zh",
+                                  initial_prompt="台灣繁體中文",
+                                  log_progress=True)
 
 # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 

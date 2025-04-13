@@ -1136,31 +1136,33 @@ class WhisperModel:
             segment = features[:, seek : seek + segment_size]
             segment_duration = segment_size * self.feature_extractor.time_per_frame
             segment = pad_or_trim(segment)
-
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(
                     "Processing segment at %s", format_timestamp(time_offset)
                 )
-            # 建立包含 initial_prompt 的 previous_tokens
-            if options.initial_prompt is not None and options.condition_on_previous_text:
-                # 保存原始的 prompt_reset_since 位置
-                original_prompt_reset_since = prompt_reset_since
                 
-                # 取得前一段落的轉錄文字 (不包含 initial_prompt)
-                previous_segment_tokens = all_tokens[prompt_reset_since:]
-                
-                # 重新設置 previous_tokens，加入 initial_prompt
+            # 取得前一段落的轉錄文字
+            previous_tokens = all_tokens[prompt_reset_since:]
+            self.logger.debug(f"Previous segment tokens: {previous_tokens}")
+            
+            # 判斷是否為剛重設的狀態（prompt_reset_since 位於 all_tokens 的最後）
+            is_just_reset = (prompt_reset_since == len(all_tokens))
+            
+            # 如果剛發生了 prompt reset，且有設定 initial_prompt，則重新加入 initial_prompt
+            if is_just_reset and options.initial_prompt is not None and options.condition_on_previous_text:
+                self.logger.debug(f"Prompt was reset, re-adding initial_prompt")
                 if isinstance(options.initial_prompt, str):
                     initial_prompt = " " + options.initial_prompt.strip()
                     initial_prompt_tokens = tokenizer.encode(initial_prompt)
-                    # 先加入 initial_prompt，再加入前一段落的文字
-                    previous_tokens = initial_prompt_tokens + previous_segment_tokens
+                    # 加入 initial_prompt 作為提示
+                    previous_tokens = initial_prompt_tokens
+                    self.logger.debug(f"Added initial prompt (string): {initial_prompt}")
                 else:
                     # 如果 initial_prompt 是 token，直接加入
-                    previous_tokens = list(options.initial_prompt) + previous_segment_tokens
-            else:
-                # 原始行為：只使用前一段落的文字
-                previous_tokens = all_tokens[prompt_reset_since:]
+                    previous_tokens = list(options.initial_prompt)
+                    self.logger.debug(f"Added initial prompt (tokens): {previous_tokens}")
+            
+            self.logger.debug(f"Final previous_tokens: {previous_tokens}")
 
             if seek > 0 or encoder_output is None:
                 encoder_output = self.encode(segment)
